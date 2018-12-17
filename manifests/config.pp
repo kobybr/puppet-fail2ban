@@ -1,8 +1,6 @@
 # == Class: fail2ban::config
 #
 class fail2ban::config {
-  # Load custom jails definition
-  $config_custom_jails = hiera_hash('fail2ban::custom_jails', undef)
 
   file { 'fail2ban.dir':
     ensure  => $::fail2ban::config_dir_ensure,
@@ -30,8 +28,8 @@ class fail2ban::config {
   }
 
   # Custom jails definition
-  if $config_custom_jails {
-    create_resources('fail2ban::jail', $config_custom_jails)
+  unless $::fail2ban::custom_jails.empty {
+    create_resources('fail2ban::jail', $::fail2ban::custom_jails)
   }
 
   # Operating system specific configuration
@@ -47,12 +45,10 @@ class fail2ban::config {
     }
     'Debian': {
       # Remove debian defaults conf
-      if $facts['os']['release']['major'] == '16.04' {
-        file { 'defaults-debian.conf':
-          ensure  => absent,
-          path    => "${::fail2ban::config_dir_path}/jail.d/defaults-debian.conf",
-          require => $::fail2ban::config_file_require,
-        }
+      file { 'defaults-debian.conf':
+        ensure  => absent,
+        path    => "${fail2ban::config_dir_path}/jail.d/defaults-debian.conf",
+        require => $fail2ban::config_file_require,
       }
     }
     default: {
